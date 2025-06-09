@@ -1,32 +1,46 @@
-// index.js
-// where your node app starts
+const express = require('express');
+const app = express();
 
-// init project
-var express = require('express');
-var app = express();
+// Enable CORS
+const cors = require('cors');
+app.use(cors({ optionsSuccessStatus: 200 }));
 
-// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC 
-var cors = require('cors');
-app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
-
-// http://expressjs.com/en/starter/static-files.html
-app.use(express.static('public'));
-
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (req, res) {
-  res.sendFile(__dirname + '/views/index.html');
+// Root
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/views/index.html");
 });
 
+// Timestamp API
+app.get("/api/:date?", (req, res) => {
+  const dateParam = req.params.date;
 
-// your first API endpoint... 
-app.get("/api/hello", function (req, res) {
-  res.json({greeting: 'hello API'});
+  let date;
+  // If no parameter is provided, use current date
+  if (!dateParam) {
+    date = new Date();
+  } else {
+    // Check if it's a timestamp (pure number)
+    if (/^\d+$/.test(dateParam)) {
+      // Convert UNIX timestamp to number before passing to Date
+      date = new Date(parseInt(dateParam));
+    } else {
+      date = new Date(dateParam);
+    }
+  }
+
+  // Check for invalid date
+  if (date.toString() === "Invalid Date") {
+    return res.json({ error: "Invalid Date" });
+  }
+
+  // Return JSON response
+  res.json({
+    unix: date.getTime(),
+    utc: date.toUTCString(),
+  });
 });
 
-
-
-// Listen on port set in environment variable or default to 3000
-var listener = app.listen(process.env.PORT || 3000, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
+// Listen
+const listener = app.listen(process.env.PORT || 3000, () => {
+  console.log("Your app is listening on port " + listener.address().port);
 });
